@@ -40,7 +40,7 @@ def profile(request, username):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     if request.user.is_authenticated and (Follow.objects.filter(
-        user=request.user, author=user_obj).exists()):
+            user=request.user, author=user_obj).exists()):
         following = True
     else:
         following = False
@@ -106,7 +106,7 @@ def post_edit(request, post_id):
 @login_required
 def add_comment(request, post_id):
     form = CommentForm(request.POST or None)
-    if request.method == 'POST'and form.is_valid():
+    if request.method == 'POST' and form.is_valid():
         comment = form.save(commit=False)
         comment.author = request.user
         comment.post = get_object_or_404(Post, pk=post_id)
@@ -125,16 +125,18 @@ def follow_index(request):
     }
     return render(request, 'posts/follow.html', context)
 
+
 @login_required
 def profile_follow(request, username):
     following_user = User.objects.get(username=username)
     if request.user != following_user and not (Follow.objects.filter(
-        user=request.user, author=following_user).exists()):
+            user=request.user, author=following_user).exists()):
         Follow.objects.create(user=request.user, author=following_user)
     return redirect('posts:profile', username=username)
+
 
 @login_required
 def profile_unfollow(request, username):
     Follow.objects.filter(user=request.user,
-        author=User.objects.get(username=username)).delete()
+                          author=User.objects.get(username=username)).delete()
     return redirect('posts:profile', username=username)
