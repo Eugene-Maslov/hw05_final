@@ -76,7 +76,7 @@ class PostURLTests(TestCase):
             with self.subTest(url=url):
                 response = self.guest_client.get(url, follow=True)
                 self.assertRedirects(response, f'/auth/login/?next={url}')
-        
+
     def test_urls_redirect_authorized_on_(self):
         """Страница /posts/1/edit/ перенапрявляет авторизованного
         пользователя, но не автора поста, на страницу поста.
