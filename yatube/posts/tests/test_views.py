@@ -75,6 +75,7 @@ class PostPagesTests(TestCase):
             reverse('posts:post_edit', kwargs={'post_id': '1'}):
                 'posts/create_post.html',
             reverse('posts:post_create'): 'posts/create_post.html',
+            reverse('posts:follow_index'): 'posts/follow.html'
         }
         for reverse_name, template in pages_names_templates.items():
             with self.subTest(reverse_name=reverse_name):
@@ -185,11 +186,6 @@ class PostPagesTests(TestCase):
             form,
             follow=True
         )
-        response = self.authorized_client.get(
-            reverse('posts:post_detail', kwargs={'post_id': '1'}))
-        form_field = response.context.get('comments')[0].text
-        self.assertEqual(form_field, form['text'])
-        # А может не мудрить и проверить так, без запроса контекста?
         self.assertEqual(Comment.objects.first().text, form['text'])
 
     def test_index_cache(self):

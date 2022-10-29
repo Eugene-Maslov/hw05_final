@@ -39,11 +39,8 @@ def profile(request, username):
     paginator = Paginator(users_posts, POSTS_QUANTITY)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    if request.user.is_authenticated and (Follow.objects.filter(
-            user=request.user, author=user_obj).exists()):
-        following = True
-    else:
-        following = False
+    following = (request.user.is_authenticated and Follow.objects.filter(
+            user=request.user, author=user_obj).exists())
     context = {
         'user_obj': user_obj,
         'posts_number': posts_number,
@@ -72,7 +69,7 @@ def post_create(request):
     form = PostForm(request.POST or None, files=request.FILES or None)
     if request.method == 'POST' and form.is_valid():
         post = form.save(commit=False)
-        post.author_id = request.user.pk
+        post.author = request.user
         post.save()
         return redirect('posts:profile', username=request.user)
     context = {
@@ -128,8 +125,8 @@ def follow_index(request):
 
 @login_required
 def profile_follow(request, username):
-    following_user = User.objects.get(username=username)
-    if request.user != following_user and not (Follow.objects.filter(
+    following_user = get_object_or_404(User, username=username)
+    if (request.user != following_user and not Follow.objects.filter(
             user=request.user, author=following_user).exists()):
         Follow.objects.create(user=request.user, author=following_user)
     return redirect('posts:profile', username=username)
@@ -137,6 +134,7 @@ def profile_follow(request, username):
 
 @login_required
 def profile_unfollow(request, username):
-    Follow.objects.filter(user=request.user,
-                          author=User.objects.get(username=username)).delete()
+    follow_user = get_object_or_404(User, username=username)
+    if Follow.objects.filter(user=request.user, author=follow_user).exists():
+        Follow.objects.filter(user=request.user, author=follow_user).delete()
     return redirect('posts:profile', username=username)

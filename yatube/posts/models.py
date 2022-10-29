@@ -7,9 +7,9 @@ User = get_user_model()
 
 
 class Group(models.Model):
-    title = models.CharField(max_length=200, verbose_name='Group name')
-    slug = models.SlugField(unique=True, verbose_name='Group address')
-    description = models.TextField(verbose_name='Group description')
+    title = models.CharField(max_length=200, verbose_name='Название группы')
+    slug = models.SlugField(unique=True, verbose_name='Адрес группы')
+    description = models.TextField(verbose_name='Описание группы')
 
     def __str__(self):
         return self.title
@@ -42,6 +42,7 @@ class Post(models.Model):
         'Картинка',
         upload_to='posts/',
         blank=True,
+        null=True,
         help_text='Загрузите картинку'
     )
 
@@ -83,12 +84,12 @@ class Comment(models.Model):
 
 class Follow(models.Model):
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        User,
         on_delete=models.CASCADE,
         related_name='follower'
     )
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        User,
         on_delete=models.CASCADE,
         related_name='following'
     )

@@ -22,6 +22,31 @@ class PostFormTests(TestCase):
             title='Тестовая группа',
             slug='test-slug',
         )
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+        )
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
+        cls.image_post_form_data = {
+            'text': 'Тестовый пост с картинкой',
+            'author': cls.user,
+            'group': cls.group,
+            'image': uploaded
+        }
+        cls.post = Post.objects.create(
+            text=cls.image_post_form_data['text'],
+            author=cls.user,
+            group=cls.group,
+            image=uploaded
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -37,14 +62,29 @@ class PostFormTests(TestCase):
 
     def test_post_create_authorized(self):
         posts_count = Post.objects.count()
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+        )
+        uploaded = SimpleUploadedFile(
+            name='small_test.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
         form = {
-            'text': 'Новая запись',
+            'text': 'Пост с картинкой',
             'group': self.group.id,
+            'image': uploaded
         }
         self.post_author.post(reverse('posts:post_create'), form, follow=True)
         self.assertEqual(Post.objects.count(), posts_count + 1)
-        self.assertEqual(Post.objects.first().group.id, self.group.id)
-        self.assertEqual(Post.objects.first().text, 'Новая запись')
+        self.assertEqual(Post.objects.first().text, form['text'])
+        self.assertEqual(Post.objects.first().group.id, form['group'])
+        self.assertEqual(Post.objects.first().image, 'posts/small_test.gif')
 
     def test_post_create_guest(self):
         posts_count_initial = Post.objects.count()
@@ -59,7 +99,6 @@ class PostFormTests(TestCase):
         self.assertFalse(Post.objects.filter(text='Новая запись',).exists())
 
     def test_post_edit(self):
-        self.test_post_create_authorized()
         posts_count = Post.objects.count()
         post_id_initial = Post.objects.first().id
         form_edit = {
@@ -75,37 +114,7 @@ class PostFormTests(TestCase):
         self.assertEqual(Post.objects.first().id, post_id_initial)
         self.assertEqual(Post.objects.first().text, 'Отредактировано')
 
-    def test_post_create_authorized_image(self):
-        posts_count = Post.objects.count()
-        small_gif = (
-            b'\x47\x49\x46\x38\x39\x61\x02\x00'
-            b'\x01\x00\x80\x00\x00\x00\x00\x00'
-            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-            b'\x0A\x00\x3B'
-        )
-        uploaded = SimpleUploadedFile(
-            name='small.gif',
-            content=small_gif,
-            content_type='image/gif'
-        )
-        image_post_form_data = {
-            'text': 'Пост с картинкой',
-            'group': self.group.id,
-            'image': uploaded
-        }
-        self.post_author.post(
-            reverse('posts:post_create'),
-            image_post_form_data,
-            follow=True
-        )
-        self.assertEqual(Post.objects.count(), posts_count + 1)
-        self.assertEqual(Post.objects.first().text, 'Пост с картинкой')
-        self.assertEqual(Post.objects.first().image, 'posts/small.gif')
-
     def test_add_comment_authorized(self):
-        self.test_post_create_authorized()
         comments_count = Comment.objects.count()
         form = {'text': 'Тестовый комментарий'}
         self.post_author.post(
@@ -117,7 +126,6 @@ class PostFormTests(TestCase):
         self.assertEqual(Comment.objects.first().text, 'Тестовый комментарий')
 
     def test_add_comment_guest(self):
-        self.test_post_create_authorized()
         comments_count = Comment.objects.count()
         form = {'text': 'Тестовый комментарий'}
         response = self.guest_client.post(

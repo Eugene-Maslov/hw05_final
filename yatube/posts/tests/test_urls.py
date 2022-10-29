@@ -45,9 +45,15 @@ class PostURLTests(TestCase):
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_post_create_url_exists_at_desired_location_authorized(self):
-        """Страница /create/ доступна авторизованному пользователю."""
-        response = self.authorized_client.get('/create/')
-        self.assertEqual(response.status_code, HTTPStatus.OK)
+        """Страницы доступны авторизованному пользователю."""
+        url_names = [
+            '/create/',
+            '/follow/'
+        ]
+        for url in url_names:
+            with self.subTest(url=url):
+                response = self.authorized_client.get(url)
+                self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_post_edit_url_exists_at_desired_location_author(self):
         """Страница /posts/1/edit/ доступна авторизованному
@@ -60,17 +66,24 @@ class PostURLTests(TestCase):
         """Страницы перенаправят пользователя на страницу логина."""
         url_names = [
             '/create/',
+            '/follow/',
             f'/posts/{self.post.id}/edit/',
-            f'/posts/{self.post.id}/edit/'
+            f'/posts/{self.post.id}/comment/',
+            f'/profile/{self.user_author}/follow/',
+            f'/profile/{self.user_author}/unfollow/'
         ]
         for url in url_names:
             with self.subTest(url=url):
-                if url[0] or url[1]:
-                    response = self.guest_client.get(url, follow=True)
-                    self.assertRedirects(response, f'/auth/login/?next={url}')
-                else:
-                    response = self.authorized_client.get(url, follow=True)
-                    self.assertRedirects(response, f'/posts/{self.post.id}/')
+                response = self.guest_client.get(url, follow=True)
+                self.assertRedirects(response, f'/auth/login/?next={url}')
+        
+    def test_urls_redirect_authorized_on_(self):
+        """Страница /posts/1/edit/ перенапрявляет авторизованного
+        пользователя, но не автора поста, на страницу поста.
+        """
+        response = self.authorized_client.get(f'/posts/{self.post.id}/edit/',
+                                              follow=True)
+        self.assertRedirects(response, f'/posts/{self.post.id}/')
 
     def test_unexisting_page_url_at_desired_location(self):
         """Страница /unexisting_page/ недоступна любому пользователю."""
@@ -86,7 +99,8 @@ class PostURLTests(TestCase):
             '/posts/1/': 'posts/post_detail.html',
             '/create/': 'posts/create_post.html',
             '/posts/1/edit/': 'posts/create_post.html',
-            '/unexisting_page/': 'core/404.html'
+            '/unexisting_page/': 'core/404.html',
+            '/follow/': 'posts/follow.html'
         }
         for url, template in templates_url_names.items():
             with self.subTest(url=url):
